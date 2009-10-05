@@ -26,7 +26,6 @@
         var that = {
             // ブックマーク サービス をロード
             load: function(){
-                var that = this;
                 // 既に検索結果がないことを確認
                 if (exists()) 
                     return;
