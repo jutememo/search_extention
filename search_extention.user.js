@@ -5,26 +5,32 @@
 // @include        http://www.google.*/search* 
 // ==/UserScript==
 (function(){
-    // 検索結果を表示する領域オブジェクト
+    /**
+     * 検索結果を表示する領域オブジェクト
+     * @param {Object} spec spec.searchSite, spec.bookmarkService
+     * @return {searchResultArea}
+     */
     var searchResultArea = function(spec){
         // ラベル(タグ)を表示する領域の色
         const TAG_BACKGROUND_COLOR = "#ffffbb";
-        // 検索結果を表示する領域
+        // 検索結果を表示する領域を表わすDOM Element
         var _area = document.createElement("div");
         // 上記領域へのはじめて書き込みか？
         var _isFirstAdd = true;
         // 強調したい文字列の配列
         var _stringsToBeEmphasized;
         
-        // 検索サイト
+        // 検索サイト オブジェクト (searchSite オブジェクトを継承)
         var _searchSite = spec.searchSite;
-        // ブックマーク サービス
+        // ブックマーク サービス オブジェクト (bookmarkService オブジェクトを継承)
         var _bookmarkService = spec.bookmarkService;
         
         // public -------------------------------------------------------------
         
         var that = {
-            // ブックマーク サービス をロード
+            /** 
+             * ブックマーク サービス をロードする
+             */
             load: function(){
                 // 既に検索結果がないことを確認
                 if (exists()) 
@@ -35,17 +41,23 @@
                     onload: function(res){
                         setBookmarks(_bookmarkService.get(this.getDom(res)));
                     },
-                    // XML から DOM Element を生成
+                    /**
+                     * XML から DOM Element を生成する
+                     * @param {Object} xml XML である文字列
+                     */
                     getDom: function(xml){
                         return new DOMParser().parseFromString(xml.responseText, "application/xml");
                     }
                 });
             }
-        }
+        };
         
         // private ------------------------------------------------------------
         
-        // ブックマーク オブジェクトの配列の設定
+        /**
+         * ブックマーク オブジェクトの配列の設定する
+         * @param {Array} bookmarks ブックマークの配列
+         */
         var setBookmarks = function(bookmarks){
             var div, i;
             // 強調したい文字列を取得
@@ -54,16 +66,19 @@
                 div = document.createElement("div");
                 // ブックマークを追加
                 div.appendChild(createAnchor({
-                    title: bookmarks[i].title,
-                    url: bookmarks[i].url
+                    title: bookmarks[i].getTitle(),
+                    url: bookmarks[i].getUrl()
                 }));
                 // ラベル(タグ)を追加
-                div.appendChild(createLabels(bookmarks[i].labels));
+                div.appendChild(createLabels(bookmarks[i].getLabels()));
                 add(div);
             }
-        }
+        };
         
-        // DOM Element を表示領域に追加
+        /**
+         * DOM Element を表示領域に追加する
+         * @param {Object} elem DOM Element
+         */
         var add = function(elem){
             var div = document.createElement('div');
             if (_isFirstAdd) {
@@ -75,15 +90,22 @@
             div.style.paddingBottom = "1em";
             div.appendChild(elem);
             _area.appendChild(div);
-        }
+        };
         
-        // 検索結果が既に存在するか？
-        // 目的: ブラウザの「戻る」対策
+        /**
+         * 検索結果が既に存在するか？
+         * 目的: ブラウザの「戻る」対策
+         * @return {boolean}
+         */
         var exists = function(){
             return document.getElementById("searchResultArea") ? true : false;
-        }
+        };
         
-        // タイトルと URL から アンカー要素を作成する
+        /** 
+         * タイトルと URL から アンカー要素を作成する
+         * @param {Object} anchor anchor.title, anchor.url
+         * @return {Object} DOM Element
+         */
         var createAnchor = function(anchor){
             var a = document.createElement('a');
             var span = document.createElement('span');
@@ -92,34 +114,46 @@
             span.innerHTML = boldSearchWords(_stringsToBeEmphasized, anchor.title);
             a.appendChild(span);
             return a;
-        }
+        };
         
-        // 文字列  str 中の検索ワード word を太文字にする
+        /** 
+         * 文字列 str 中の検索ワード word を太文字にする
+         * @param {String} word 太文字にしたい文字列
+         * @param {String} str 全体の文字列
+         * @return {String}
+         */
         var boldSearchWord = function(word, str){
             var r = new RegExp(word, 'gi');
             var tag = function(t, s){
                 return "<" + t + ">" + s + "</" + t + ">";
-            }
+            };
             return str.replace(r, tag("b", "$&"));
-        }
-        // 文字列 str 中の検索ワード (words) を太文字にする。 
+        };
+        /**
+         *  文字列 str 中の検索ワード (words) を太文字にする。
+         * @param {Array} words 太文字にしたい文字列の配列
+         * @param {Object} str 全体の文字列
+         * @return {String}
+         */
         var boldSearchWords = function(words, str){
             var i, ret = str;
             for (i = 0; i < words.length; i++) {
                 ret = boldSearchWord(words[i], ret);
             }
             return ret;
-        }
+        };
         
-        // ラベル(タグ)を生成
+        /**
+         *  ラベル(タグ)を生成して返す
+         * @param {Array} labels ラベルの配列
+         * @return {Object} DOM Element
+         */
         var createLabels = function(labels){
             var div = document.createElement('div');
             var span, a, i;
-            with (div.style) {
-                paddingTop = "4px";
-                fontSize = "90%";
-                cssFloat = "right";
-            }
+            div.style.paddingTop = "4px";
+            div.style.fontSize = "90%";
+            div.style.cssFloat = "right";
             for (i = 0; i < labels.length; i++) {
                 span = document.createElement('span');
                 a = createAnchor({
@@ -135,47 +169,63 @@
                 div.appendChild(span);
             }
             return div;
-        }
+        };
         
-        // 検索サイト で検索した単語から、ブックマーク を検索するための URL を生成
+        /**
+         * 検索サイトで検索した単語から、ブックマーク を検索するための URL を生成
+         * @return {String}
+         */
         var searchBmUrl = function(){
             return _bookmarkService.getSearchUrl() + _searchSite.getQuery();
-        }
+        };
         
         return that;
-    }
+    };
     
     //-------------------------------------------------------------------------
     
-    // 検索サイトに対応した オブジェクト
-    // このオブジェクトを拡張する
+    /**
+     * 検索サイトに対応したオブジェクト。
+     * このオブジェクトを拡張して、具体的なサイトに対応したオブジェクトを作成する。
+     * @param {Object} spec spec.query, spec.searchUrl
+     * @param {Object} my このオブジェクトを継承したオブジェクトからアクセス可能なオブジェクト
+     * @return {searchSite}
+     * spec.searchUrl : このサイトで検索するための URL 。ただし、検索文字列に対応したパラメータの値を除く。
+     */
     var searchSite = function(spec, my){
-        // このオブジェクトを継承したオブジェクトからのみアクセス可能なオブジェクト
         my = my ||
         {};
-        // 検索文字列に対応したパラメータの値
-        var _query = spec.query;
-        // 検索するための URL 。ただし、検索文字列に対応したパラメータの値を除く。
-        var _searchUrl = spec.searchUrl;
         
         // public -------------------------------------------------------------
         
         var that = {
+            /** 
+             *  このサイトで検索したときの、検索文字列に対応したパラメータの値を返す
+             *  @return {Stirng}
+             */
             getQuery: function(){
-                return _query;
+                return spec.query;
             },
-            // 文字列 q を 検索するための URL を取得
+            /**
+             *  文字列 q を このサイトで検索するための URL を返す
+             * @param {String} q クエリ
+             * @return {String}
+             */
             getSearchUrl: function(q){
                 var query = q !== "" ? encodeURIComponent(q) : "";
-                return _searchUrl + query;
+                return spec.searchUrl + query;
             },
-            // @Override
-            // 検索結果を表示する領域 area を初期化
+            /** 
+             * 検索結果を表示する領域 area を初期化する
+             * @param {searchResultArea} area
+             */
             initArea: function(area){
                 GM_log("searchSite.initArea()がオーバーライドされていません。");
             },
-            // @Override
-            // 検索文字列の配列を返す。ただし、結果の表示において強調したい文字列のみ。
+            /**
+             * 検索文字列の配列を返す。ただし、結果の表示において強調したい文字列のみ。
+             * @return {String}
+             */
             getStringToBeEmphasized: function(){
                 GM_log("searchSite.getStringToBeEmphasized()がオーバーライドされていません。");
             }
@@ -183,81 +233,126 @@
         
         // protected ----------------------------------------------------------
         
-        // デフォルトの検索結果の設定
+        /**
+         *  ブックマークを表示する領域のデフォルトの設定
+         * @param {Object} Dom Element 設定する対象
+         * @param {String} areaId 領域のid名
+         * @param {String} targetId このidの要素の前に領域を挿入
+         * @param {String} removeId 削除する要素のid
+         */
         var defaultInitArea = function(area, areaId, targetId, removeId){
             var initArea = function(){
-                area.setAttribute("id", areaId)
+                area.setAttribute("id", areaId);
                 area.style.cssFloat = "right";
                 area.style.width = "35%";
                 area.style.padding = "10px";
             }();
             var removeAd = function(){
-                var div = document.getElementById(removeId)
+                var div = document.getElementById(removeId);
                 if (div) {
                     div.parentNode.removeChild(div);
                 }
             }();
             div = document.getElementById(targetId);
             div.parentNode.insertBefore(area, div);
-        }
+        };
         my.defaultInitArea = defaultInitArea;
         
         return that;
-    }
+    };
     
     //-------------------------------------------------------------------------
     
-    // ブックマーク サービスを表わすオブジェクト
-    // このオブジェクトを拡張する
+    /**
+     *  ブックマーク サービスを表わすオブジェクト。
+     *  このオブジェクトを拡張して、具体的なオンラインブックマークに対応したオブジェクトを作成。
+     * @param {Object} spec spec.url
+     * @return {bookmarkService}
+     */
     var bookmarkService = function(spec){
-        // このブックマークサービスを検索するための URL 。ただし、結果が XML で返されること。
-        var _searchUrl = spec.url;
-        
         return {
             // public ---------------------------------------------------------
             
+            /**
+             * このブックマークサービスを検索するための URL を返す。ただし、検索結果が XML で返されること。
+             * @return {String}
+             */
             getSearchUrl: function(){
-                return _searchUrl;
+                return spec.url;
             },
-            // @Override
-            // ブックマークの配列を返す
-            get: function(xml){
+            /** 
+             * DOM からブックマークの配列を返す
+             * @param {Object} dom DOM Element
+             * @return {Array} bookmark を継承したオブジェクトの配列
+             */
+            get: function(dom){
                 GM_log("bookmarkService.get()がオーバーライドされていません。");
             }
-        }
-    }
+        };
+    };
     
     //-------------------------------------------------------------------------
     
-    // bookmark オブジェクト
+    /**
+     * bookmark オブジェクト
+     * このオブジェクトを拡張して具体的なブックマークに対応したオブジェクトを生成する
+     * @param {Object} spec spec.title, spec.url
+     * @param {Object} my このオブジェクトを継承したオブジェクトからアクセス可能なオブジェクト
+     * @return {bookmark}
+     */
     // このオブジェクトを拡張する。
-    var bookmark = function(spec){
+    var bookmark = function(spec, my){
+        my = my ||
+        {};
         // ラベル (タグ) の配列
         var _labels = [];
         
+        my.labels = _labels;
+        
         return {
             // public ---------------------------------------------------------
             
-            // タイトル
-            title: spec.title,
-            // URL
-            url: spec.url,
-            // ラベルの配列
-            labels: _labels,
-            // @Override
-            // DOM Element からラベル(タグ)の配列を設定する。
-            setLabels: function(xml){
-                GM_log("bookmark.setLabels(xml)がオーバーライドされていません。")
+            /**
+             * タイトル
+             * @return {String}
+             */
+            getTitle: function(){
+                return spec.title;
+            },
+            /**
+             * URL
+             * @return {String}
+             */
+            getUrl: function(){
+                return spec.url;
+            },
+            /**
+             * ラベルの配列
+             * @return {Array}
+             */
+            getLabels: function(){
+                return _labels;
+            },
+            /**
+             * DOM Element からラベル(タグ)の配列を設定する。
+             * @param {Object} dom DOM Element
+             */
+            setLabelsFromDom: function(dom){
+                GM_log("bookmark.setLabelsFromDom(dom)がオーバーライドされていません。");
             }
-        }
-    }
+        };
+    };
     
     //-------------------------------------------------------------------------
     
-    // Google 検索オブジェクト
-    // searchSite を継承
-    var googleSearchSite = function(){
-        my = {};
+    var GOOGLE = {}
+    
+    /**
+     *  Google 検索サイトに対応したオブジェクト。
+     *  @inherits searchSite
+     */
+    GOOGLE.searchSite = function(){
+        var my = {};
         // searchSite を継承したオブジェクトを生成
         var that = searchSite({
             // Google 検索時点のクエリ文字列
@@ -268,31 +363,38 @@
         
         // public -------------------------------------------------------------
         
-        // @Override
-        // 検索結果の表示領域を設定
+        /**
+         * 検索結果の表示領域を設定
+         * @Override
+         */
         var initArea = function(area){
             // TODO area の設定をカスタマイズできるようにする
             my.defaultInitArea(area, "searchResultArea", "res", "mbEnd");
-        }
+        };
         that.initArea = initArea;
         
-        // @Override
-        // Google 検索文字列の配列を返す。ただし、結果の表示において強調したい文字列のみ。
+        /**
+         * Google 検索文字列の配列を返す。ただし、結果の表示において強調したい文字列のみ。
+         * @Override
+         * @return {Array}
+         */
         var getStringToBeEmphasized = function(){
             return strSpliter(decodeURIComponent(that.getQuery())).split("+");
-        }
+        };
         that.getStringToBeEmphasized = getStringToBeEmphasized;
         
         // private ------------------------------------------------------------
         
-        // Google 検索において、検索文字列を分割し、強調して表示したい文字列を抽出。
-        //
-        // - 以下の検索文字列中の文字列は捨てる。
-        //   * AND, OR, |, "
-        //   * 接頭辞が `-' の文字列
-        // - フレーズ検索は、フレーズのまま取り出す。
-        //
-        // TODO Google オプションの一部しか対応していないので要改善。
+        /**
+         * Google 検索において、検索文字列を分割し、強調して表示したい文字列を抽出。
+         * - 以下の検索文字列中の文字列は捨てる。
+         *   * AND, OR, |, "
+         *   * 接頭辞が `-' の文字列
+         * - フレーズ検索は、フレーズのまま取り出す。
+         * @param {Object} str
+         *
+         * TODO 読みにくいし、Google オプションの一部しか対応していないので要改善。
+         */
         strSpliter = function(str){
             // 分割対象の文字列
             var _s = str;
@@ -300,7 +402,7 @@
             var _p = [0, 0];
             
             return {
-                //  str を次の位置へ進める
+                // 次の str の位置に対応した値に  p[i] をする
                 findNext: function(str, p, i){
                     var idx = _s.indexOf(str, function(index){
                         if (index === 1) 
@@ -309,7 +411,7 @@
                             return p[1];
                     }(i));
                     if (idx !== -1) {
-                        return _p[i] = idx;
+                        return (_p[i] = idx);
                     }
                     else {
                         return null;
@@ -367,17 +469,19 @@
                     // 文字列から引用符を取り除き、文字列 str で分割
                     return this.del(_s.replace(/"/g, "").split(str));
                 }
-            }
-        }
-        
+            };
+        };
         return that;
-    }
+    };
     
     //-------------------------------------------------------------------------
     
-    // Google Bookmarks オブジェクト
-    // bookmarkService オブジェクトを継承
-    var googleBookmarkService = function(spec){
+    /** 
+     * Google Bookmarks オブジェクト
+     * @inherits bookmarkService
+     * @return {googleBookmarkService}
+     */
+    GOOGLE.bookmarkService = function(){
         // bookmarkService を継承したオブジェクトを生成
         var that = bookmarkService({
             // Google Bookmarks を検索するための URL (xml で出力 )
@@ -386,52 +490,64 @@
         
         // public -------------------------------------------------------------
         
-        // @Override
-        // Dom Element からブックマーク オブジェクトの配列を返す
-        that.get = function(dom){
+        /**
+         * Dom Element からブックマーク オブジェクトの配列を返す
+         * @Override
+         * @param {Object} dom DOM Element
+         * @return {Array}
+         */
+        get = function(dom){
             var bookmarks = dom.getElementsByTagName("bookmark");
-            var ret = [];
             var bm;
+            var ret = [];
             for (var i = 0; i < bookmarks.length; i++) {
-                // ブックマーク オブジェクトを生成
-                bm = googleBookmark({
-                    title: bookmarks[i].getElementsByTagName('title')[0].textContent,
-                    url: bookmarks[i].getElementsByTagName('url')[0].textContent
-                });
-                // ラベル(タグ)を生成
-                bm.setLabels(bookmarks[i]);
-                ret.push(bm);
+                bm = bookmarks[i];
+                ret.push(GOOGLE.bookmark({
+                    title: bm.getElementsByTagName('title')[0].textContent,
+                    url: bm.getElementsByTagName('url')[0].textContent
+                }).setLabelsFromDom(bm));
             }
             return ret;
-        }
+        };
+        that.get = get;
+        
         return that;
-    }
+    };
     
     //-------------------------------------------------------------------------
     
-    // Google ブックマーク オブジェクト
-    // bookmark オブジェクトを継承
-    var googleBookmark = function(spec){
+    /**
+     * Google ブックマーク オブジェクト
+     * @inherits bookmark
+     * @param {Object} spec
+     * @return {googleBookmark}
+     */
+    GOOGLE.bookmark = function(spec){
+        var my = {};
         // bookmark を継承したオブジェクトを生成
-        var that = bookmark(spec);
+        var that = bookmark(spec, my);
         
         // public -------------------------------------------------------------
         
-        // @Override
-        // DOM Element からラベル(タグ)を生成
-        that.setLabels = function(dom){
+        /**
+         * DOM Element からラベル(タグ)を生成
+         * @Override
+         * @param {Object} dom
+         */
+        that.setLabelsFromDom = function(dom){
             var labels = dom.getElementsByTagName('label');
             for (var i = 0; i < labels.length; i++) {
-                that.labels.push(labels[i].textContent);
+                my.labels.push(labels[i].textContent);
             }
-        }
+            return this;
+        };
         return that;
-    }
+    };
     
     //-------------------------------------------------------------------------
     
     searchResultArea({
-        searchSite: googleSearchSite(),
-        bookmarkService: googleBookmarkService()
+        searchSite: GOOGLE.searchSite(),
+        bookmarkService: GOOGLE.bookmarkService()
     }).load();
-})()
+})();
