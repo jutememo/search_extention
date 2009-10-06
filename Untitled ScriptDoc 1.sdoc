@@ -1,0 +1,12 @@
+/**
+ * 引数を加算した結果を返す
+ * @param {Number} a 
+ * @param {Number} b
+ * @return {Number}
+ */
+var add = function(a, b){
+    return a + b;
+};
+
+
+ad

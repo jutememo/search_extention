@@ -182,7 +182,9 @@
         return that;
     };
     
-    //-------------------------------------------------------------------------
+    //#########################################################################
+    
+    var Abstract = {};
     
     /**
      * 検索サイトに対応したオブジェクト。
@@ -192,7 +194,7 @@
      * @return {searchSite}
      * spec.searchUrl : このサイトで検索するための URL 。ただし、検索文字列に対応したパラメータの値を除く。
      */
-    var searchSite = function(spec, my){
+    Abstract.searchSite = function(spec, my){
         my = my ||
         {};
         
@@ -261,15 +263,14 @@
         return that;
     };
     
-    //-------------------------------------------------------------------------
-    
+   
     /**
      *  ブックマーク サービスを表わすオブジェクト。
      *  このオブジェクトを拡張して、具体的なオンラインブックマークに対応したオブジェクトを作成。
      * @param {Object} spec spec.url
      * @return {bookmarkService}
      */
-    var bookmarkService = function(spec){
+    Abstract.bookmarkService = function(spec){
         return {
             // public ---------------------------------------------------------
             
@@ -291,8 +292,6 @@
         };
     };
     
-    //-------------------------------------------------------------------------
-    
     /**
      * bookmark オブジェクト
      * このオブジェクトを拡張して具体的なブックマークに対応したオブジェクトを生成する
@@ -300,8 +299,7 @@
      * @param {Object} my このオブジェクトを継承したオブジェクトからアクセス可能なオブジェクト
      * @return {bookmark}
      */
-    // このオブジェクトを拡張する。
-    var bookmark = function(spec, my){
+    Abstract.bookmark = function(spec, my){
         my = my ||
         {};
         // ラベル (タグ) の配列
@@ -343,18 +341,117 @@
         };
     };
     
-    //-------------------------------------------------------------------------
+    //#########################################################################
     
-    var GOOGLE = {}
+    var Util = {};
+    
+    /**
+     * Google 検索において、検索文字列を分割し、強調して表示したい文字列を抽出。
+     *
+     * - 以下の検索文字列中の文字列は捨てる。
+     *   * AND, OR, |, "
+     *   * 接頭辞が `-' の文字列
+     * - フレーズ検索は、フレーズのまま取り出す。
+     * @param {Object} str
+     *
+     * TODO 読みにくいし、Google オプションの一部しか対応していないので要改善。
+     */
+    Util.strExtracter = function(str){
+        var that = {};
+        // 分割対象の文字列
+        var _s = str;
+        // 引用符を指し示すための 2 つの値。文字列 _s のインデックスを表わす。
+        var _p = [0, 0];
+        
+        // public -------------------------------------------------------------
+        
+        // 分割する
+        var split = function(str){
+            // "XXXXX+YYYYY" の + を空白に置き換える
+            replace();
+            // 文字列から引用符を取り除き、文字列 str で分割
+            return del(_s.replace(/"/g, "").split(str));
+        };
+        that.split = split;
+        
+        // private ------------------------------------------------------------
+        
+        // 次の str の位置に対応した値に  p[i] をする
+        var findNext = function(str, p, i){
+            var idx = _s.indexOf(str, function(index){
+                if (index === 1) 
+                    return p[0] + 1;
+                else 
+                    return p[1];
+            }(i));
+            if (idx !== -1) {
+                return (_p[i] = idx);
+            }
+            else {
+                return null;
+            }
+        };
+        // 文字列 _s のインデックス _p[0], _p[1] の間に、文字 str が存在するか?
+        var exists = function(str){
+            if (_s.substring(_p[0], _p[1]).indexOf(str) != -1) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        };
+        // 文字列 _s のインデックス _p[0], _p[1] の間にある文字が、全て文字 str であるか？
+        var all = function(str){
+            var target = _s.substring(_p[0] + 1, _p[1]);
+            var i;
+            for (i = 0; i < target.length; i++) {
+                if (target[i] !== str) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        // フレーズ検索における引用符 "XXXXX+YYYYY" の中にある`+' を空白に置き換える。
+        // ただし、検索時に単語と単語を区切るための空白と置き換わっている`+' はそのままにしておく。
+        var replace = function(){
+            if (findNext('"', _p, 0) !== null && findNext('"', _p, 1) !== null) {
+                if (exists("+") && !all("+")) {
+                    _s = _s.substring(0, _p[0]) +
+                    _s.substring(_p[0], _p[1]).replace(/\+/g, " ") +
+                    _s.substring(_p[1], _s.length);
+                }
+            }
+            else {
+                return this;
+            }
+            replace();
+        };
+        var del = function(words){
+            var ret = [], i;
+            for (i = 0; i < words.length; i++) {
+                // 「空文字, | , 先頭が - ではじめる文字列, AND, OR」を取り除く
+                if (/^$|\||^-|AND|OR/g.test(words[i])) 
+                    continue;
+                ret.push(words[i]);
+            }
+            return ret;
+        };
+        
+        return that;
+    };
+    
+    //#########################################################################
+    
+    var Google = {};
     
     /**
      *  Google 検索サイトに対応したオブジェクト。
      *  @inherits searchSite
      */
-    GOOGLE.searchSite = function(){
+    Google.searchSite = function(){
         var my = {};
         // searchSite を継承したオブジェクトを生成
-        var that = searchSite({
+        var that = Abstract.searchSite({
             // Google 検索時点のクエリ文字列
             query: location.search.match(/q=(.*?)(?:&|$)/)[1],
             // Google 検索をするための URL
@@ -379,111 +476,21 @@
          * @return {Array}
          */
         var getStringToBeEmphasized = function(){
-            return strSpliter(decodeURIComponent(that.getQuery())).split("+");
+            return Util.strExtracter(decodeURIComponent(that.getQuery())).split("+");
         };
         that.getStringToBeEmphasized = getStringToBeEmphasized;
         
-        // private ------------------------------------------------------------
-        
-        /**
-         * Google 検索において、検索文字列を分割し、強調して表示したい文字列を抽出。
-         * - 以下の検索文字列中の文字列は捨てる。
-         *   * AND, OR, |, "
-         *   * 接頭辞が `-' の文字列
-         * - フレーズ検索は、フレーズのまま取り出す。
-         * @param {Object} str
-         *
-         * TODO 読みにくいし、Google オプションの一部しか対応していないので要改善。
-         */
-        strSpliter = function(str){
-            // 分割対象の文字列
-            var _s = str;
-            // 引用符を指し示すための 2 つの値。文字列 _s のインデックスを表わす。
-            var _p = [0, 0];
-            
-            return {
-                // 次の str の位置に対応した値に  p[i] をする
-                findNext: function(str, p, i){
-                    var idx = _s.indexOf(str, function(index){
-                        if (index === 1) 
-                            return p[0] + 1;
-                        else 
-                            return p[1];
-                    }(i));
-                    if (idx !== -1) {
-                        return (_p[i] = idx);
-                    }
-                    else {
-                        return null;
-                    }
-                },
-                // 文字列 _s のインデックス _p[0], _p[1] の間に、文字 str が存在するか?
-                exists: function(str){
-                    if (_s.substring(_p[0], _p[1]).indexOf(str) != -1) {
-                        return true;
-                    }
-                    else {
-                        return false;
-                    }
-                },
-                // 文字列 _s のインデックス _p[0], _p[1] の間にある文字が、全て文字 str であるか？
-                all: function(str){
-                    var target = _s.substring(_p[0] + 1, _p[1]);
-                    var i;
-                    for (i = 0; i < target.length; i++) {
-                        if (target[i] !== str) {
-                            return false;
-                        }
-                    }
-                    return true;
-                },
-                // フレーズ検索における引用符 "XXXXX+YYYYY" の中にある`+' を空白に置き換える。
-                // ただし、検索時に単語と単語を区切るための空白と置き換わっている`+' はそのままにしておく。
-                replace: function(){
-                    if (this.findNext('"', _p, 0) !== null && this.findNext('"', _p, 1) !== null) {
-                        if (this.exists("+") && !this.all("+")) {
-                            _s = _s.substring(0, _p[0]) +
-                            _s.substring(_p[0], _p[1]).replace(/\+/g, " ") +
-                            _s.substring(_p[1], _s.length);
-                        }
-                    }
-                    else {
-                        return this;
-                    }
-                    this.replace();
-                },
-                del: function(words){
-                    var ret = [], i;
-                    for (i = 0; i < words.length; i++) {
-                        // 「空文字, | , 先頭が - ではじめる文字列, AND, OR」を取り除く
-                        if (/^$|\||^-|AND|OR/g.test(words[i])) 
-                            continue;
-                        ret.push(words[i]);
-                    }
-                    return ret;
-                },
-                // 分割する
-                split: function(str){
-                    // "XXXXX+YYYYY" の + を空白に置き換える
-                    this.replace();
-                    // 文字列から引用符を取り除き、文字列 str で分割
-                    return this.del(_s.replace(/"/g, "").split(str));
-                }
-            };
-        };
         return that;
     };
-    
-    //-------------------------------------------------------------------------
     
     /** 
      * Google Bookmarks オブジェクト
      * @inherits bookmarkService
      * @return {googleBookmarkService}
      */
-    GOOGLE.bookmarkService = function(){
+    Google.bookmarkService = function(){
         // bookmarkService を継承したオブジェクトを生成
-        var that = bookmarkService({
+        var that = Abstract.bookmarkService({
             // Google Bookmarks を検索するための URL (xml で出力 )
             url: "http://www.google.com/bookmarks/find?output=xml&q="
         });
@@ -502,7 +509,7 @@
             var ret = [];
             for (var i = 0; i < bookmarks.length; i++) {
                 bm = bookmarks[i];
-                ret.push(GOOGLE.bookmark({
+                ret.push(Google.bookmark({
                     title: bm.getElementsByTagName('title')[0].textContent,
                     url: bm.getElementsByTagName('url')[0].textContent
                 }).setLabelsFromDom(bm));
@@ -514,18 +521,16 @@
         return that;
     };
     
-    //-------------------------------------------------------------------------
-    
     /**
      * Google ブックマーク オブジェクト
      * @inherits bookmark
      * @param {Object} spec
      * @return {googleBookmark}
      */
-    GOOGLE.bookmark = function(spec){
+    Google.bookmark = function(spec){
         var my = {};
         // bookmark を継承したオブジェクトを生成
-        var that = bookmark(spec, my);
+        var that = Abstract.bookmark(spec, my);
         
         // public -------------------------------------------------------------
         
@@ -544,10 +549,10 @@
         return that;
     };
     
-    //-------------------------------------------------------------------------
+    //#########################################################################
     
     searchResultArea({
-        searchSite: GOOGLE.searchSite(),
-        bookmarkService: GOOGLE.bookmarkService()
+        searchSite: Google.searchSite(),
+        bookmarkService: Google.bookmarkService()
     }).load();
 })();
