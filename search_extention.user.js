@@ -18,7 +18,7 @@
         // 上記領域へのはじめて書き込みか？
         var _isFirstAdd = true;
         // 強調したい文字列の配列
-        var _stringsToBeEmphasized;
+        var _strEmAry;
         
         // 検索サイト オブジェクト (searchSite オブジェクトを継承)
         var _searchSite = spec.searchSite;
@@ -39,7 +39,7 @@
                     method: 'GET',
                     url: searchBmUrl(),
                     onload: function(res){
-                        setBookmarks(_bookmarkService.get(this.getDom(res)));
+                        setBookmarks(_bookmarkService.convToObj(this.getDom(res)));
                     },
                     /**
                      * XML から DOM Element を生成する
@@ -61,7 +61,7 @@
         var setBookmarks = function(bookmarks){
             var div, i;
             // 強調したい文字列を取得
-            _stringsToBeEmphasized = _searchSite.getStringToBeEmphasized();
+            _strEmAry = _searchSite.getStrEmAry();
             for (i = 0; i < bookmarks.length; i++) {
                 div = document.createElement("div");
                 // ブックマークを追加
@@ -111,7 +111,7 @@
             var span = document.createElement('span');
             a.setAttribute('href', anchor.url);
             span.innerHTML = anchor.title;
-            span.innerHTML = boldSearchWords(_stringsToBeEmphasized, anchor.title);
+            span.innerHTML = boldSearchWords(_strEmAry, anchor.title);
             a.appendChild(span);
             return a;
         };
@@ -191,7 +191,7 @@
      * このオブジェクトを拡張して、具体的なサイトに対応したオブジェクトを作成する。
      * @param {Object} spec spec.query, spec.searchUrl
      * @param {Object} my このオブジェクトを継承したオブジェクトからアクセス可能なオブジェクト
-     * @return {searchSite}
+     * @return {Abstract.searchSite}
      * spec.searchUrl : このサイトで検索するための URL 。ただし、検索文字列に対応したパラメータの値を除く。
      */
     Abstract.searchSite = function(spec, my){
@@ -228,8 +228,8 @@
              * 検索文字列の配列を返す。ただし、結果の表示において強調したい文字列のみ。
              * @return {String}
              */
-            getStringToBeEmphasized: function(){
-                GM_log("searchSite.getStringToBeEmphasized()がオーバーライドされていません。");
+            getStrEmAry: function(){
+                GM_log("searchSite.getStrEmAry()がオーバーライドされていません。");
             }
         };
         
@@ -268,7 +268,7 @@
      *  ブックマーク サービスを表わすオブジェクト。
      *  このオブジェクトを拡張して、具体的なオンラインブックマークに対応したオブジェクトを作成。
      * @param {Object} spec spec.url
-     * @return {bookmarkService}
+     * @return {Abstract.bookmarkService}
      */
     Abstract.bookmarkService = function(spec){
         return {
@@ -286,7 +286,7 @@
              * @param {Object} dom DOM Element
              * @return {Array} bookmark を継承したオブジェクトの配列
              */
-            get: function(dom){
+            convToObj: function(dom){
                 GM_log("bookmarkService.get()がオーバーライドされていません。");
             }
         };
@@ -297,7 +297,7 @@
      * このオブジェクトを拡張して具体的なブックマークに対応したオブジェクトを生成する
      * @param {Object} spec spec.title, spec.url
      * @param {Object} my このオブジェクトを継承したオブジェクトからアクセス可能なオブジェクト
-     * @return {bookmark}
+     * @return {Abstract.bookmark}
      */
     Abstract.bookmark = function(spec, my){
         my = my ||
@@ -447,6 +447,7 @@
     /**
      *  Google 検索サイトに対応したオブジェクト。
      *  @inherits searchSite
+     *  @return {Google.searchSite}
      */
     Google.searchSite = function(){
         var my = {};
@@ -475,10 +476,10 @@
          * @Override
          * @return {Array}
          */
-        var getStringToBeEmphasized = function(){
+        var getStrEmAry = function(){
             return Util.strExtracter(decodeURIComponent(that.getQuery())).split("+");
         };
-        that.getStringToBeEmphasized = getStringToBeEmphasized;
+        that.getStrEmAry = getStrEmAry;
         
         return that;
     };
@@ -486,7 +487,7 @@
     /** 
      * Google Bookmarks オブジェクト
      * @inherits bookmarkService
-     * @return {googleBookmarkService}
+     * @return {Gooble.bookmarkService}
      */
     Google.bookmarkService = function(){
         // bookmarkService を継承したオブジェクトを生成
@@ -503,7 +504,7 @@
          * @param {Object} dom DOM Element
          * @return {Array}
          */
-        get = function(dom){
+        convToObj = function(dom){
             var bookmarks = dom.getElementsByTagName("bookmark");
             var bm;
             var ret = [];
@@ -516,7 +517,7 @@
             }
             return ret;
         };
-        that.get = get;
+        that.convToObj = convToObj;
         
         return that;
     };
@@ -525,7 +526,7 @@
      * Google ブックマーク オブジェクト
      * @inherits bookmark
      * @param {Object} spec
-     * @return {googleBookmark}
+     * @return {Google.bookmark}
      */
     Google.bookmark = function(spec){
         var my = {};
