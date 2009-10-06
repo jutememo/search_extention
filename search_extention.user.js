@@ -263,14 +263,39 @@
         return that;
     };
     
-   
+    
     /**
      *  ブックマーク サービスを表わすオブジェクト。
      *  このオブジェクトを拡張して、具体的なオンラインブックマークに対応したオブジェクトを作成。
      * @param {Object} spec spec.url
      * @return {Abstract.bookmarkService}
      */
-    Abstract.bookmarkService = function(spec){
+    Abstract.bookmarkService = function(spec, my){
+        my = my ||
+        {};
+        
+        /**
+         * DOM からブックマークの配列を返すデフォルトの実装
+         * @param {Object} dom DOM Element
+         * @param {String} bookmark XMLにおけるブックマークを表わす要素名
+         * @param {Stirng} title XMLにおけるタイトルを表わす要素名
+         * @param {Stirng} url XMLにおけるURLを表わす要素名
+         */
+        var defaultConvToObj = function(dom, bookmark, title, url){
+            var bookmarks = dom.getElementsByTagName(bookmark);
+            var bm;
+            var ret = [];
+            for (var i = 0; i < bookmarks.length; i++) {
+                bm = bookmarks[i];
+                ret.push(Google.bookmark({
+                    title: bm.getElementsByTagName(title)[0].textContent,
+                    url: bm.getElementsByTagName(url)[0].textContent
+                }).setLabelsFromDom(bm));
+            }
+            return ret;
+        };
+        my.defaultConvToObj = defaultConvToObj;
+        
         return {
             // public ---------------------------------------------------------
             
@@ -300,16 +325,31 @@
      * @return {Abstract.bookmark}
      */
     Abstract.bookmark = function(spec, my){
+    
+        // protected ----------------------------------------------------------
+        
         my = my ||
         {};
         // ラベル (タグ) の配列
         var _labels = [];
-        
         my.labels = _labels;
         
+        /**
+         * DOM Element からラベル(タグ)の配列を設定する。
+         * @param {Object} dom DOM Element
+         * @param {String} label
+         */
+        var defaultSetLabelsFromDom = function(dom, label){
+            var labels = dom.getElementsByTagName(label);
+            for (var i = 0; i < labels.length; i++) {
+                _labels.push(labels[i].textContent);
+            }
+        };
+        my.defaultSetLabelsFromDom = defaultSetLabelsFromDom;
+        
+        // public -------------------------------------------------------------
+        
         return {
-            // public ---------------------------------------------------------
-            
             /**
              * タイトル
              * @return {String}
@@ -490,11 +530,12 @@
      * @return {Gooble.bookmarkService}
      */
     Google.bookmarkService = function(){
+        var my = {};
         // bookmarkService を継承したオブジェクトを生成
         var that = Abstract.bookmarkService({
             // Google Bookmarks を検索するための URL (xml で出力 )
             url: "http://www.google.com/bookmarks/find?output=xml&q="
-        });
+        }, my);
         
         // public -------------------------------------------------------------
         
@@ -504,20 +545,9 @@
          * @param {Object} dom DOM Element
          * @return {Array}
          */
-        convToObj = function(dom){
-            var bookmarks = dom.getElementsByTagName("bookmark");
-            var bm;
-            var ret = [];
-            for (var i = 0; i < bookmarks.length; i++) {
-                bm = bookmarks[i];
-                ret.push(Google.bookmark({
-                    title: bm.getElementsByTagName('title')[0].textContent,
-                    url: bm.getElementsByTagName('url')[0].textContent
-                }).setLabelsFromDom(bm));
-            }
-            return ret;
+        that.convToObj = function(dom){
+            return my.defaultConvToObj(dom, "bookmark", "title", "url");
         };
-        that.convToObj = convToObj;
         
         return that;
     };
@@ -541,10 +571,7 @@
          * @param {Object} dom
          */
         that.setLabelsFromDom = function(dom){
-            var labels = dom.getElementsByTagName('label');
-            for (var i = 0; i < labels.length; i++) {
-                my.labels.push(labels[i].textContent);
-            }
+            my.defaultSetLabelsFromDom(dom, 'label');
             return this;
         };
         return that;
