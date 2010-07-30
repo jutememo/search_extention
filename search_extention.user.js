@@ -195,8 +195,7 @@
      * spec.searchUrl : このサイトで検索するための URL 。ただし、検索文字列に対応したパラメータの値を除く。
      */
     Abstract.searchSite = function(spec, my){
-        my = my ||
-        {};
+        my = my || {};
         
         // public -------------------------------------------------------------
         
@@ -271,8 +270,7 @@
      * @return {Abstract.bookmarkService}
      */
     Abstract.bookmarkService = function(spec, my){
-        my = my ||
-        {};
+        my = my || {};
         
         /**
          * DOM からブックマークの配列を返すデフォルトの実装
@@ -328,8 +326,7 @@
     
         // protected ----------------------------------------------------------
         
-        my = my ||
-        {};
+        my = my || {};
         // ラベル (タグ) の配列
         var _labels = [];
         my.labels = _labels;
