@@ -59,11 +59,13 @@
          * @param {Array} bookmarks ブックマークの配列
          */
         var setBookmarks = function(bookmarks){
-            var div, i;
+            var div, i, span;
             // 強調したい文字列を取得
             _strEmAry = _searchSite.getStrEmAry();
             for (i = 0; i < bookmarks.length; i++) {
                 div = document.createElement("div");
+                // マーカーを追加
+                div.appendChild(createMarker(i));
                 // ブックマークを追加
                 div.appendChild(createAnchor({
                     title: bookmarks[i].getTitle(),
@@ -75,6 +77,17 @@
             }
         };
         
+		/**
+		 * 各ブックマークに付けるマーカーを作成する
+		 * @param {Number} idx
+		 * @return {Object} DOM Element
+		 */
+        var createMarker = function(idx){
+            var span = document.createElement("span");
+            span.appendChild(document.createTextNode((idx + 1).toString() + ". "));
+			return span;
+        }
+        
         /**
          * DOM Element を表示領域に追加する
          * @param {Object} elem DOM Element
@@ -84,7 +97,7 @@
             if (_isFirstAdd) {
                 _searchSite.initArea(_area);
                 // 検索サイトにおいてスクロールしている場合、
-				// ブックマークの検索結果をその位置に合わせて表示
+                // ブックマークの検索結果をその位置に合わせて表示
                 _area.style.marginTop = scrollY.toString() + "px";
                 _isFirstAdd = false;
             }
@@ -506,10 +519,10 @@
         var initArea = function(area){
             // TODO area の設定をカスタマイズできるようにする
             my.defaultInitArea(area, "searchResultArea", "res", "mbEnd");
-			
-			// Google 検索サイトのデザインの変更に伴ない CSS を設定
-			var div = document.getElementById("center_col");
-			div.style.marginRight = "0px";
+            
+            // Google 検索サイトのデザインの変更に伴ない CSS を設定
+            var div = document.getElementById("center_col");
+            div.style.marginRight = "0px";
         };
         that.initArea = initArea;
         
