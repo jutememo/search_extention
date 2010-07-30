@@ -59,7 +59,7 @@
          * @param {Array} bookmarks ブックマークの配列
          */
         var setBookmarks = function(bookmarks){
-            var div, i, span;
+            var div, i;
             // 強調したい文字列を取得
             _strEmAry = _searchSite.getStrEmAry();
             for (i = 0; i < bookmarks.length; i++) {
