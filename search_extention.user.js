@@ -13,7 +13,7 @@
     var searchResultArea = function(spec){
         // ラベル(タグ)を表示する領域の色
         const TAG_BACKGROUND_COLOR = "#ffffbb";
-        // 検索結果を表示する領域を表わすDOM Element
+        // 検索結果を表示する領域を表わす DOM Element
         var _area = document.createElement("div");
         // 上記領域へのはじめて書き込みか？
         var _isFirstAdd = true;
@@ -83,7 +83,8 @@
             var div = document.createElement('div');
             if (_isFirstAdd) {
                 _searchSite.initArea(_area);
-                // 既にいスクロールしていた場合、下にずらして表示
+                // 検索サイトにおいてスクロールしている場合、
+				// ブックマークの検索結果をその位置に合わせて表示
                 _area.style.marginTop = scrollY.toString() + "px";
                 _isFirstAdd = false;
             }
@@ -505,6 +506,10 @@
         var initArea = function(area){
             // TODO area の設定をカスタマイズできるようにする
             my.defaultInitArea(area, "searchResultArea", "res", "mbEnd");
+			
+			// Google 検索サイトのデザインの変更に伴ない CSS を設定
+			var div = document.getElementById("center_col");
+			div.style.marginRight = "0px";
         };
         that.initArea = initArea;
         
