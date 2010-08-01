@@ -64,6 +64,7 @@
             _strEmAry = _searchSite.getStrEmAry();
             for (i = 0; i < bookmarks.length; i++) {
                 div = document.createElement("div");
+				div.style.clear = "both";
                 // マーカーを追加
                 div.appendChild(createMarker(i));
                 // ブックマークを追加
@@ -101,7 +102,7 @@
                 _area.style.marginTop = scrollY.toString() + "px";
                 _isFirstAdd = false;
             }
-            div.style.paddingBottom = "1em";
+            div.style.paddingBottom = "0.7em";
             div.appendChild(elem);
             _area.appendChild(div);
         };
@@ -165,7 +166,7 @@
         var createLabels = function(labels){
             var div = document.createElement('div');
             var span, a, i;
-            div.style.paddingTop = "4px";
+            div.style.paddingTop = "1px";
             div.style.fontSize = "90%";
             div.style.cssFloat = "right";
             for (i = 0; i < labels.length; i++) {
@@ -175,11 +176,11 @@
                     title: labels[i]
                 });
                 span.appendChild(a);
-                span.innerHTML = " [ <span style='background-color:" +
+                span.innerHTML = " [<span style='background-color:" +
                 TAG_BACKGROUND_COLOR +
                 ";'>" +
                 span.innerHTML +
-                "</span>] ";
+                "</span>]";
                 div.appendChild(span);
             }
             return div;
