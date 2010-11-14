@@ -64,7 +64,7 @@
             _strEmAry = _searchSite.getStrEmAry();
             for (i = 0; i < bookmarks.length; i++) {
                 div = document.createElement("div");
-				div.style.clear = "both";
+                div.style.clear = "both";
                 // マーカーを追加
                 div.appendChild(createMarker(i));
                 // ブックマークを追加
@@ -78,15 +78,15 @@
             }
         };
         
-		/**
-		 * 各ブックマークに付けるマーカーを作成する
-		 * @param {Number} idx
-		 * @return {Object} DOM Element
-		 */
+        /**
+         * 各ブックマークに付けるマーカーを作成する
+         * @param {Number} idx
+         * @return {Object} DOM Element
+         */
         var createMarker = function(idx){
             var span = document.createElement("span");
             span.appendChild(document.createTextNode((idx + 1).toString() + ". "));
-			return span;
+            return span;
         }
         
         /**
@@ -260,7 +260,7 @@
             var initArea = function(){
                 area.setAttribute("id", areaId);
                 area.style.cssFloat = "right";
-                area.style.width = "35%";
+                area.style.width = "30%";
                 area.style.padding = "10px";
             }();
             var removeAd = function(){
@@ -524,6 +524,8 @@
             // Google 検索サイトのデザインの変更に伴ない CSS を設定
             var div = document.getElementById("center_col");
             div.style.marginRight = "0px";
+            var divSearchArea = document.getElementById("res");
+            divSearchArea.style.width = "65%";
         };
         that.initArea = initArea;
         
