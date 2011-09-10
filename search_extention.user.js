@@ -552,7 +552,7 @@
         // bookmarkService を継承したオブジェクトを生成
         var that = Abstract.bookmarkService({
             // Google Bookmarks を検索するための URL (xml で出力 )
-            url: "http://www.google.com/bookmarks/find?output=xml&q="
+            url: "http://www.google.com/bookmarks/find?output=rss&q="
         }, my);
         
         // public -------------------------------------------------------------
@@ -564,7 +564,7 @@
          * @return {Array}
          */
         that.convToObj = function(dom){
-            return my.defaultConvToObj(dom, "bookmark", "title", "url");
+            return my.defaultConvToObj(dom, "item", "title", "link");
         };
         
         return that;
